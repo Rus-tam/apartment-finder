@@ -9,15 +9,15 @@ const TelegramApi = require('node-telegram-bot-api');
 const bot = new TelegramApi(token, {polling: true});
 
 let dataStorage = ['0'];
-
+let analyticsInitialData = [];
 
 //const url = 'https://www.avito.ru/ufa/kvartiry/prodam-ASgBAgICAUSSA8YQ?cd=1&district=70';
 
 const adsSender = (url, chatId) => {
     request({url, headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'}}, async (error, response) => {
         if (error) {
-            await bot.sendMessage(chatId, 'Что-то сломалось! Все пропало!');
-            console.log(error);
+            await bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/566/45f/56645f7f-a710-3ccf-9170-2916aff53e97/4.webp');
+            await bot.sendMessage(chatId, 'Что-то работает не так как надо!');
         } else {
             //console.log(response);
             const result = getAdsInfo(response);
@@ -39,6 +39,19 @@ const adsSender = (url, chatId) => {
         }
     })
 };
+
+const analyticsSender = (url, chatId) => {
+    request({url, headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'}}, async (error, response) => {
+        if (error) {
+            await bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/566/45f/56645f7f-a710-3ccf-9170-2916aff53e97/4.webp');
+            await bot.sendMessage(chatId, 'Что-то работает не так как надо!');
+        } else {
+            const result = response.body;
+            await console.log(getPrices(result));
+            await bot.sendMessage(chatId, result.length);
+        }
+    })
+}
 
 const districtSelector = {
     reply_markup: JSON.stringify({
@@ -64,6 +77,23 @@ const analyticsStart = {
     reply_markup: JSON.stringify(({
         inline_keyboard: [
             [{text: 'Поехали!', callback_data: 'analyticsRun'}]
+        ]
+    }))
+};
+
+const housingMarket = {
+    reply_markup: JSON.stringify(({
+        inline_keyboard: [
+            [{text: 'Первичный рынок', callback_data: 'primaryMarket'}, {text: 'Вторичный рынок', callback_data: 'secondaryMarket'}]
+        ]
+    }))
+};
+
+const roomsNumber = {
+    reply_markup: JSON.stringify(({
+        inline_keyboard: [
+            [{text: '1 комната', callback_data: 'oneRoom'}, {text: '2 комнаты', callback_data: 'twoRooms'}, {text: '3 комнаты', callback_data: 'threeRooms'}],
+            [{text: '4 комнаты', callback_data: 'fourRooms'}, {text: 'студия', callback_data: 'studii'}]
         ]
     }))
 }
@@ -111,7 +141,7 @@ const start = () => {
         }
 
         if (text === '/analytics') {
-            return bot.sendMessage(chatId, 'Режим аналитики включен!', analyticsStart);
+            bot.sendMessage(chatId, 'Режим аналитики включен! Сейчас будет произведена оценка средней стоимости 1 кв.метра жилья.', analyticsStart);
         }
     });
 };
@@ -137,6 +167,57 @@ bot.on('callback_query', async msg => {
         let url = `https://www.avito.ru/ufa/kvartiry/prodam-ASgBAgICAUSSA8YQ?cd=1&district=${districtNumber}&p=${pageNumber}`;
         adsSender(url, chatId);
     }
+
+
+    //Работа модуля аналитики
+    if (data === 'analyticsRun') {
+        analyticsInitialData = [];
+        await bot.sendMessage(chatId, 'Анализировать первичный или вторичный рынок жилья?', housingMarket);
+    }
+    if (data === 'primaryMarket') {
+        analyticsInitialData.push('novostroyka');
+        await bot.sendMessage(chatId, 'Скольки комнатные квартиры рассматривать?', roomsNumber);
+    } else if (data === 'secondaryMarket') {
+        analyticsInitialData.push('vtorichka');
+        await bot.sendMessage(chatId, 'Скольки комнатные квартиры рассматривать?', roomsNumber);
+    }
+
+    switch (data) {
+        case 'oneRoom':
+            analyticsInitialData.push('1-komnatnye');
+            analyticsInitialData.push('ASgBAQICAUSSA8YQAkDmBxSOUsoIFIBZ');
+            break;
+        case 'twoRooms':
+            analyticsInitialData.push('2-komnatnye');
+            analyticsInitialData.push('ASgBAQICAUSSA8YQAkDmBxSMUsoIFIJZ');
+            break;
+        case 'threeRooms':
+            analyticsInitialData.push('3-komnatnye');
+            analyticsInitialData.push('ASgBAQICAUSSA8YQAkDmBxSMUsoIFIRZ')
+            break;
+        case 'fourRooms':
+            analyticsInitialData.push('4-komnatnye');
+            analyticsInitialData.push('ASgBAQICAUSSA8YQAkDmBxSMUsoIFIZZ')
+            break;
+        case 'studii':
+            analyticsInitialData.push('studii');
+            analyticsInitialData.push('ASgBAQICAUSSA8YQAkDmBxSOUsoIFP5Y');
+    }
+
+    await console.log(analyticsInitialData);
+    //await console.log(`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}-komnatnye/${analyticsInitialData[0]}-ASgBAQICAUSSA8YQAkDmBxSOUsoIFIZZ?cd=`);
+    if (analyticsInitialData.length === 3) {
+        for (let count = 1; count <= 2; count++){
+            (function (num) {
+                setTimeout(function () {
+                    let url = (`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}/${analyticsInitialData[0]}-${analyticsInitialData[2]}?cd=` + count);
+                    console.log(url);
+                    analyticsSender(url, chatId);
+                }, 3000 * num * (Math.floor(Math.random() * 10 + 1)))
+            }(count, analyticsInitialData));
+        }
+    };
+
 });
 
 start();
