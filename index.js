@@ -207,7 +207,7 @@ bot.on('callback_query', async msg => {
     await console.log(analyticsInitialData);
     //await console.log(`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}-komnatnye/${analyticsInitialData[0]}-ASgBAQICAUSSA8YQAkDmBxSOUsoIFIZZ?cd=`);
     if (analyticsInitialData.length === 3) {
-        for (let count = 1; count <= 2; count++){
+        for (let count = 1; count <= 1; count++){
             (function (num) {
                 setTimeout(function () {
                     let url = (`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}/${analyticsInitialData[0]}-${analyticsInitialData[2]}?cd=` + count);
