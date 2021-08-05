@@ -10,6 +10,9 @@ const bot = new TelegramApi(token, {polling: true});
 
 let dataStorage = ['0'];
 let analyticsInitialData = [];
+var averagePricesList = [];
+let purifiedAveragePriceList = [];
+let sum = 0;
 
 //const url = 'https://www.avito.ru/ufa/kvartiry/prodam-ASgBAgICAUSSA8YQ?cd=1&district=70';
 
@@ -44,11 +47,26 @@ const analyticsSender = (url, chatId) => {
     request({url, headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'}}, async (error, response) => {
         if (error) {
             await bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/566/45f/56645f7f-a710-3ccf-9170-2916aff53e97/4.webp');
-            await bot.sendMessage(chatId, 'Что-то работает не так как надо!');
+            await bot.sendMessage(chatId, 'Что-то работает не так как надо! Подожди пару минут и попробуй еще раз!');
         } else {
             const result = response.body;
-            await console.log(getPrices(result));
-            await bot.sendMessage(chatId, result.length);
+            averagePricesList.push(getPrices(result));
+
+            if (averagePricesList.includes('We are blocked!')) {
+                await bot.sendMessage(chatId, 'Нас заблокировали!');
+            }
+
+            await console.log(averagePricesList);
+
+            if (averagePricesList.length === 10) {
+                averagePricesList.forEach((elem) => !isNaN(elem) ? purifiedAveragePriceList.push(elem) : null)
+
+                purifiedAveragePriceList.forEach((elem) => {
+                    sum += elem;
+                });
+
+                await bot.sendMessage(chatId, `Стоимость 1 кв метра в выбранным вами типе жилья составляет ${String(Math.floor(sum / purifiedAveragePriceList.length))}`);
+            }
         }
     })
 }
@@ -204,20 +222,24 @@ bot.on('callback_query', async msg => {
             analyticsInitialData.push('ASgBAQICAUSSA8YQAkDmBxSOUsoIFP5Y');
     }
 
+
+
     await console.log(analyticsInitialData);
-    //await console.log(`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}-komnatnye/${analyticsInitialData[0]}-ASgBAQICAUSSA8YQAkDmBxSOUsoIFIZZ?cd=`);
+
     if (analyticsInitialData.length === 3) {
-        for (let count = 1; count <= 1; count++){
+
+        await bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/f87/928/f8792879-6d47-3804-91fd-f5b585fb0c9e/9.webp');
+        await bot.sendMessage(chatId, 'Поиск начался. Поиск может занять более 5 минут. Жди и ничего не трогай!');
+
+        for (let count = 1; count <= 10; count++){
             (function (num) {
                 setTimeout(function () {
-                    let url = (`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}/${analyticsInitialData[0]}-${analyticsInitialData[2]}?cd=` + count);
-                    console.log(url);
+                    let url = (`https://www.avito.ru/ufa/kvartiry/prodam/${analyticsInitialData[1]}/${analyticsInitialData[0]}-${analyticsInitialData[2]}?cd=1&p=` + count);
                     analyticsSender(url, chatId);
                 }, 3000 * num * (Math.floor(Math.random() * 10 + 1)))
             }(count, analyticsInitialData));
         }
     };
-
 });
 
 start();
