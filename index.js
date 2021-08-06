@@ -1,8 +1,16 @@
 const request = require('request');
 require('dotenv').config();
 
-const getAdsInfo = require('./utils/getAdsInfo');
-const getPrices = require('./utils/getPrices');
+const getAdsInfo = require('./parserUtils/getAdsInfo');
+const getPrices = require('./parserUtils/getPrices');
+const nextPage = require('./buttons/nextPage');
+const districtSelector = require('./buttons/districtSelector');
+const analyticsStart = require('./buttons/analyticsStart');
+const housingMarket = require('./buttons/housingMarket');
+const roomsNumber = require('./buttons/roomsNumber');
+
+
+
 
 const token = process.env.TOKEN;
 const TelegramApi = require('node-telegram-bot-api');
@@ -65,58 +73,11 @@ const analyticsSender = (url, chatId) => {
                     sum += elem;
                 });
 
-                await bot.sendMessage(chatId, `Стоимость 1 кв метра в выбранным вами типе жилья составляет ${String(Math.floor(sum / purifiedAveragePriceList.length))}`);
+                await bot.sendMessage(chatId, `Анализ информации закончен! Было рассмотренно ${purifiedAveragePriceList.length * 59} объявлений. Стоимость 1 кв метра в выбранным вами типе жилья составляет ${String(Math.floor(sum / purifiedAveragePriceList.length))}`);
             }
         }
     })
 }
-
-const districtSelector = {
-    reply_markup: JSON.stringify({
-        inline_keyboard: [
-            [{text: 'Демский', callback_data: '70'}, {text: 'Калининский', callback_data: '71'}, {text: 'Кировский', callback_data: '72'}],
-            [{text: 'Ленинский', callback_data: '73'}, {text: 'Октябрьский', callback_data: '74'}, {text: 'Орджоникидзевский', callback_data: '75'}],
-            [{text: 'Советсткий', callback_data: '76'}]
-        ]
-    })
-};
-
-const nextPage = {
-    reply_markup: JSON.stringify(({
-        inline_keyboard: [
-            [{text: 'Страница 2', callback_data: '2'}, {text: 'Страница 3', callback_data: '3'}, {text: 'Страница 4', callback_data: '4'}],
-            [{text: 'Страница 5', callback_data: '5'}, {text: 'Страница 6', callback_data: '6'}, {text: 'Страница 7', callback_data: '7'}],
-            [{text: 'Страница 8', callback_data: '8'}, {text: 'Страница 9', callback_data: '9'}, {text: 'Страница 10', callback_data: '10'}]
-        ]
-    }))
-};
-
-const analyticsStart = {
-    reply_markup: JSON.stringify(({
-        inline_keyboard: [
-            [{text: 'Поехали!', callback_data: 'analyticsRun'}]
-        ]
-    }))
-};
-
-const housingMarket = {
-    reply_markup: JSON.stringify(({
-        inline_keyboard: [
-            [{text: 'Первичный рынок', callback_data: 'primaryMarket'}, {text: 'Вторичный рынок', callback_data: 'secondaryMarket'}]
-        ]
-    }))
-};
-
-const roomsNumber = {
-    reply_markup: JSON.stringify(({
-        inline_keyboard: [
-            [{text: '1 комната', callback_data: 'oneRoom'}, {text: '2 комнаты', callback_data: 'twoRooms'}, {text: '3 комнаты', callback_data: 'threeRooms'}],
-            [{text: '4 комнаты', callback_data: 'fourRooms'}, {text: 'студия', callback_data: 'studii'}]
-        ]
-    }))
-}
-
-
 
 const start = () => {
 
@@ -229,7 +190,7 @@ bot.on('callback_query', async msg => {
     if (analyticsInitialData.length === 3) {
 
         await bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/f87/928/f8792879-6d47-3804-91fd-f5b585fb0c9e/9.webp');
-        await bot.sendMessage(chatId, 'Поиск начался. Поиск может занять более 5 минут. Жди и ничего не трогай!');
+        await bot.sendMessage(chatId, 'Поиск начался. В среднем процесс занимает пять и более минут. Наберись терпения и ничего не трогай!');
 
         for (let count = 1; count <= 10; count++){
             (function (num) {
